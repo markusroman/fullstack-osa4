@@ -6,7 +6,8 @@
   "scripts": {
     "watch": "cross-env NODE_ENV=development nodemon index.js",
     "start": "cross-env NODE_ENV=production node index.js",
-    "test": "cross-env NODE_ENV=test jest --verbose --runInBand"
+    "test": "cross-env NODE_ENV=test jest --verbose --runInBand",
+    "testsuper": "npx cross-env NODE_ENV=test jest tests/blog_api.test.js --verbose --runInBand"
   },
   "author": "Markus Röman",
   "license": "ISC",
