@@ -1,10 +1,20 @@
 const blogRouter = require('express').Router()
 const Blog = require('../models/blog')
+const User = require("../models/user")
+const jwt = require("jsonwebtoken")
+
+const getTokenFrom = request => {
+    const authorization = request.get('authorization')
+    if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
+        return authorization.substring(7)
+    }
+    return null
+}
 
 blogRouter.get('/', async (request, response, next) => {
     try {
         const blogs = await Blog.find({})
-        console.log(blogs)
+            .populate('user', { username: 1, name: 1 })
         response.json(blogs.map(b => b.toJSON()))
     } catch (error) {
         next(error)
@@ -14,6 +24,7 @@ blogRouter.get('/', async (request, response, next) => {
 blogRouter.get("/:id", async (req, res, next) => {
     try {
         const blog = Blog.findById(req.params.id)
+            .populate('notes', { username: 1, name: 1 })
         if (blog) {
             return res.json(blog.toJSON())
         } else {
@@ -25,19 +36,30 @@ blogRouter.get("/:id", async (req, res, next) => {
 })
 
 blogRouter.post('/', async (request, response, next) => {
-    const blog = new Blog({
-        ...request.body,
-        likes: request.body.likes === undefined ?
-            0 : request.body.likes
+    const body = request.body
 
-    })
-    if (blog.title === undefined || blog.url === undefined) {
-        response.status(400).send({ error: 'malformatted blog' })
-        return
-    }
+    const token = getTokenFrom(request)
 
     try {
-        const saved = blog.save()
+        const decodedToken = jwt.verify(token, process.env.SECRET)
+        if (!token || !decodedToken.id) {
+            return response.status(401).json({ error: 'token missing or invalid' })
+        }
+
+        const user = await User.findById(decodedToken.id)
+
+        const blog = new Blog({
+            user: user._id,
+            likes: body.likes === undefined ? 0 : body.likes,
+            author: body.author === undefined ? user.name : body.author,
+            ...body
+        })
+
+        console.log("BLOG TO ADD", blog)
+
+        const saved = await blog.save({ runValidators: true, context: 'query' })
+        user.blogs = user.blogs.concat(saved._id)
+        await user.save()
         response.status(201).json(saved.toJSON())
     } catch (error) {
         next(error)
@@ -62,7 +84,8 @@ blogRouter.put('/:id', async (req, res, next) => {
             url: body.url,
             likes: body.likes
         }
-        const updated = await Blog.findByIdAndUpdate(req.params.id, blog, { new: true })
+        const updated = await Blog.findByIdAndUpdate(req.params.id, blog,
+            { new: true, runValidators: true, context: 'query' })
         res.json(updated.toJSON())
     } catch (error) {
         next(error)
