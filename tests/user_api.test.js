@@ -1,6 +1,8 @@
 const User = require('../models/user')
-
-//...
+const supertest = require('supertest')
+const helper = require('./test_helper')
+const app = require('../app')
+const api = supertest(app)
 
 describe('when there is initially one user at db', () => {
     beforeEach(async () => {

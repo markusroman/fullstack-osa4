@@ -12,7 +12,7 @@ usersRouter.post('/', async (request, response, next) => {
     try {
         const body = request.body
 
-        if (body.password.length < 3) {
+        if (body.password.length < 3 || body.password === undefined) {
             return response.status(400).json({ error: "Invalid password" })
         }
 
