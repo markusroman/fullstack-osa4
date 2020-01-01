@@ -90,22 +90,11 @@ blogRouter.put('/:id', async (req, res, next) => {
         likes: body.likes
     }
     try {
-        const decodedToken = jwt.verify(req.token, process.env.SECRET)
-        if (!req.token || !decodedToken.id) {
-            return response.status(401).json({ error: 'token missing or invalid' })
-        }
         const blog = await Blog.findById(req.params.id)
         if (!blog) {
             return res.status(404).json({ error: 'blog was not found' })
         }
-
-        if (blog.user.toString() !== decodedToken.id) {
-            return res
-                .status(401)
-                .json({ error: 'Invalid permission to update this blog' });
-        }
-        const updated = await blog.update(req.params.id, newBlog,
-            { new: true, runValidators: true, context: 'query' })
+        const updated = await Blog.findByIdAndUpdate(req.params.id, newBlog, { new: true })
         return res.json(updated.toJSON())
     } catch (error) {
         next(error)
