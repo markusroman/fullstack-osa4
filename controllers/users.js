@@ -27,7 +27,7 @@ usersRouter.post('/', async (request, response, next) => {
 
         const savedUser = await user.save({ runValidators: true, context: 'query' })
 
-        response.json(savedUser)
+        response.json(savedUser.toJSON())
     } catch (exception) {
         next(exception)
     }
