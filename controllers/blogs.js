@@ -88,6 +88,7 @@ blogRouter.put("/:id", async (req, res, next) => {
     author: body.author,
     url: body.url,
     likes: body.likes,
+    comments: body.comments,
   }
   try {
     const blog = await Blog.findById(req.params.id)
